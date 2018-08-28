@@ -50,15 +50,12 @@ defmodule FireAct do
     |> handle_action_result()
   end
 
-  if Code.ensure_loaded?(Plug) do
-    def run(%Plug.Conn{} = conn, handler) do
-      action(handler, conn.params)
-      |> Map.put(:assigns, conn.assigns)
-      |> run()
-    end
+  def run(handler, params, assigns) do
+    action(handler, params, assigns)
+    |> run()
   end
 
-  def run(handler, params) when is_atom(handler) do
+  def run(handler, params) do
     action(handler, params)
     |> run()
   end
@@ -69,6 +66,10 @@ defmodule FireAct do
 
   defp handle_action_result(%Action{failed: false} = action) do
     {:ok, action}
+  end
+
+  def action(%Plug.Conn{} = conn, handler) do
+    action(handler, conn.params, conn.assigns)
   end
 
   def action(handler, params \\ %{}, assigns \\ %{}) do

@@ -4,8 +4,8 @@ defmodule FireAct.MixProject do
   def project do
     [
       app: :fire_act,
-      version: "0.1.1",
-      elixir: "~> 1.6",
+      version: "0.1.2",
+      elixir: "~> 1.5",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: [extras: ["README.md"], main: "readme"],
@@ -38,7 +38,7 @@ defmodule FireAct.MixProject do
       {:ecto, "~> 2.2"},
       {:dialyxir, "> 0.0.0", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.13", only: :dev},
-      {:plug, "~> 1.6.2", only: :test},
+      {:plug, "~> 1.6.2", optional: true},
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
     ]
   end
