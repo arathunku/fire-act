@@ -35,6 +35,7 @@ defmodule FireAct.MixProject do
   defp deps do
     [
       {:ecto, "~> 2.2"},
+      {:dialyxir, "> 0.0.0", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.13", only: :dev},
       {:plug, "~> 1.6.2", only: :test},
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}

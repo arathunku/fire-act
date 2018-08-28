@@ -1,6 +1,7 @@
 defmodule FireActTest.ChangesetParamsTest do
   defmodule RegisterUser do
     use FireAct.Handler
+
     use FireAct.ChangesetParams, %{
       age: :integer
     }
@@ -26,9 +27,12 @@ defmodule FireActTest.ChangesetParamsTest do
 
   defmodule UnhaltedRegisterUser do
     use FireAct.Handler
-    use FireAct.ChangesetParams, schema: %{
-      age: :integer
-    }, halt_on_error: false
+
+    use FireAct.ChangesetParams,
+      schema: %{
+        age: :integer
+      },
+      halt_on_error: false
 
     # Params are nil because they didn't pass the validation
     def handle(action, nil) do
@@ -46,9 +50,10 @@ defmodule FireActTest.ChangesetParamsTest do
   doctest FireAct.ChangesetParams
 
   test "run number fail - wrong age" do
-    {:error, action} = FireAct.run(RegisterUser, %{
-      age: "n"
-    })
+    {:error, action} =
+      FireAct.run(RegisterUser, %{
+        age: "n"
+      })
 
     refute action.assigns[:success]
     assert action.assigns[:permitted_params] == nil
@@ -56,9 +61,10 @@ defmodule FireActTest.ChangesetParamsTest do
   end
 
   test "run fail - wrong age" do
-    {:error, action} = FireAct.run(RegisterUser, %{
-      age: 10
-    })
+    {:error, action} =
+      FireAct.run(RegisterUser, %{
+        age: 10
+      })
 
     refute action.assigns[:success]
     assert action.assigns[:permitted_params] == nil
@@ -66,24 +72,28 @@ defmodule FireActTest.ChangesetParamsTest do
   end
 
   test "run success" do
-    {:ok, action} = FireAct.run(RegisterUser, %{
-      age: 20
-    })
+    {:ok, action} =
+      FireAct.run(RegisterUser, %{
+        age: 20
+      })
 
     assert action.assigns[:success] == 1
+
     assert action.assigns[:permitted_params] == %{
-      age: 20,
-    }
+             age: 20
+           }
   end
 
   test "success even when params validation fails" do
-    {:ok, action_failed} = FireAct.run(UnhaltedRegisterUser, %{
-      age: "abcd"
-    })
+    {:ok, action_failed} =
+      FireAct.run(UnhaltedRegisterUser, %{
+        age: "abcd"
+      })
 
-    {:ok, action_success} = FireAct.run(UnhaltedRegisterUser, %{
-      age: "20"
-    })
+    {:ok, action_success} =
+      FireAct.run(UnhaltedRegisterUser, %{
+        age: "20"
+      })
 
     assert action_failed.assigns[:msg] == "fail"
     assert action_success.assigns[:msg] == "success"

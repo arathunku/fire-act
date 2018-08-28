@@ -8,7 +8,6 @@ defmodule FireAct.Handler do
 
       # use FireAct.Builder, unquote(opts)
 
-
       # def handle(action, _params) do
       #   action
       # end

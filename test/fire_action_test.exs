@@ -46,9 +46,10 @@ defmodule FireActTest do
   doctest FireAct
 
   test "run success" do
-    {:ok, action} = FireAct.run(RegisterUser, %{
-      success: 1
-    })
+    {:ok, action} =
+      FireAct.run(RegisterUser, %{
+        success: 1
+      })
 
     assert action.assigns[:success] == 2
     assert action.assigns[:event_emitted]

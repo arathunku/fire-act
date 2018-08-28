@@ -70,6 +70,7 @@ defmodule FireAct.ChangesetParams do
       def action(%FireAct.Action{} = action, _opts \\ []) do
         apply(__MODULE__, :handle, [action, action.assigns[:permitted_params]])
       end
+
       defoverridable action: 2
     end
   end

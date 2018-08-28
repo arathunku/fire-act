@@ -12,8 +12,9 @@ defmodule FireActionTest.PlugTest do
   use ExUnit.Case
 
   test "run number fail - wrong age" do
-    {:ok, action} = %Plug.Conn{params: %{"test" => "1"}}
-                    |> FireAct.run(RegisterUser)
+    {:ok, action} =
+      %Plug.Conn{params: %{"test" => "1"}}
+      |> FireAct.run(RegisterUser)
 
     assert action.assigns[:success]
     assert action.params == %{"test" => "1"}
