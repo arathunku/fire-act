@@ -9,7 +9,8 @@ defmodule FireAct.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: [extras: ["README.md"], main: "readme"],
-      package: package()
+      package: package(),
+      description: "Plug inspired/based helper for defining action handlers."
     ]
   end
 

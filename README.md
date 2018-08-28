@@ -1,6 +1,6 @@
 # FireAct
 
-Plug based, a helper module for defining action handlers with
+Plug inspired/based helper for defining action handlers with
 optional params validations via Ecto.Changeset.
 
 Perfect for extracting logic outside the controller endpoints.
