@@ -62,12 +62,21 @@ defmodule FireActTest do
   end
 
   test "run halted" do
-    {:ok, action} = FireAct.run(Halted, %{})
+    {:ok, action} = FireAct.action(Halted, %{}) |> FireAct.run()
 
     assert action.halted
     assert action.assigns[:first]
     assert action.assigns[:second]
     assert action.assigns[:authorize_reached]
     refute action.assigns[:end_of_chain_reached]
+  end
+
+  test "#action" do
+    %FireAct.Action{
+      params: %{a: 1},
+      assigns: %{
+        b: 2
+      }
+    } = FireAct.action(Halted, %{a: 1}, %{b: 2})
   end
 end

@@ -71,8 +71,8 @@ defmodule FireAct do
     {:ok, action}
   end
 
-  defp action(handler, params) do
-    %Action{params: params}
+  def action(handler, params \\ %{}, assigns \\ %{}) do
+    %Action{params: params, assigns: assigns}
     |> Action.put_private(:fire_act_handler, handler)
   end
 
