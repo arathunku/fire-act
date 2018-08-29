@@ -4,7 +4,7 @@ defmodule FireActionTest.PlugTest do
   defmodule RegisterUser do
     use FireAct.Handler
 
-    def handle(action, params) do
+    def handle(action, _params) do
       action
     end
   end

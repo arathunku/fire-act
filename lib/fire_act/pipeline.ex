@@ -40,7 +40,16 @@ defmodule FireAct.Pipeline do
   @doc false
   defmacro __before_compile__(env) do
     handle = {:action, [], true}
-    plugs = [handle | Module.get_attribute(env.module, :plugs)]
+    plugs = Module.get_attribute(env.module, :plugs)
+    plugs_names = Enum.map(plugs, fn {name, _, _} -> name end)
+    action_plug_exists = :action in plugs_names
+
+    plugs =
+      if action_plug_exists do
+        plugs
+      else
+        [handle | plugs]
+      end
 
     {action, body} =
       FireAct.Builder.compile(env, plugs,

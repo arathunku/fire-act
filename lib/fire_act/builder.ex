@@ -152,7 +152,7 @@ defmodule FireAct.Builder do
       case plug_type do
         :module -> "expected #{inspect(plug)}.call/2 to return a FireAct.Action"
         :function -> "expected #{plug}/2 to return a FireAct.Action"
-      end <> ", all plugs must receive a action and return an action"
+      end <> ", all plugs must receive an action and return an action"
 
     {fun, meta, [arg, [do: clauses]]} =
       quote do

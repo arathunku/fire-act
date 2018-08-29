@@ -33,13 +33,28 @@ defmodule FireActTest do
     plug(:authorize)
     plug(:step, :end_of_chain_reached)
 
-    def step(conn, step), do: assign(conn, step, true)
+    def step(action, step), do: assign(action, step, true)
 
     def authorize(action, _) do
       action
       |> assign(:authorize_reached, true)
       |> halt()
     end
+  end
+
+  defmodule Ordered do
+    use FireAct.Handler
+
+    plug(:step, :one)
+    # step two
+    plug(:action)
+    plug(:step, :three)
+
+    def step(action, step),
+      do: assign(action, :steps, (action.assigns[:steps] || []) ++ [step])
+
+    def handle(action, _),
+      do: step(action, :two)
   end
 
   use ExUnit.Case
@@ -69,6 +84,12 @@ defmodule FireActTest do
     assert action.assigns[:second]
     assert action.assigns[:authorize_reached]
     refute action.assigns[:end_of_chain_reached]
+  end
+
+  test "steps order" do
+    {:ok, action} = FireAct.action(Ordered, %{}) |> FireAct.run()
+
+    assert action.assigns[:steps] == [:one, :two, :three]
   end
 
   test "#action" do
