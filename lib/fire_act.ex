@@ -50,13 +50,13 @@ defmodule FireAct do
     |> handle_action_result()
   end
 
-  def run(handler, params, assigns) do
-    action(handler, params, assigns)
+  def run(handler, params) do
+    action(handler, params)
     |> run()
   end
 
-  def run(handler, params) do
-    action(handler, params)
+  def run(handler, params, assigns) do
+    action(handler, params, assigns)
     |> run()
   end
 
