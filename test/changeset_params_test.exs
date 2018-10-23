@@ -46,6 +46,34 @@ defmodule FireActTest.ChangesetParamsTest do
     end
   end
 
+  defmodule PlugBeforeChangeset do
+    use FireAct.Handler
+
+    plug(:set_resource)
+
+    use FireAct.ChangesetParams,
+      schema: %{
+        age: :integer
+      }
+
+    def handle(action, _) do
+      action.assigns.resource
+
+      action
+    end
+
+    defp validate_params(action, chset) do
+      action.assigns.resource
+
+      chset
+    end
+
+    def set_resource(action, _) do
+      action
+      |> assign(:resource, %{id: 1})
+    end
+  end
+
   use ExUnit.Case
   doctest FireAct.ChangesetParams
 
@@ -97,5 +125,12 @@ defmodule FireActTest.ChangesetParamsTest do
 
     assert action_failed.assigns[:msg] == "fail"
     assert action_success.assigns[:msg] == "success"
+  end
+
+  test "plugs before changeset" do
+    {:ok, action} =
+      FireAct.run(PlugBeforeChangeset, %{
+        age: "20"
+      })
   end
 end
