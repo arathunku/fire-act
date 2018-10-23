@@ -35,10 +35,10 @@ defmodule FireAct.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto, "~> 2.2"},
+      {:ecto, "~> 2.2 or ~> 3.0"},
       {:dialyxir, "> 0.0.0", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.13", only: :dev},
-      {:plug, "~> 1.6.2", optional: true},
+      {:plug, "~> 1.6.2 or ~> 2.0", optional: true},
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
     ]
   end
