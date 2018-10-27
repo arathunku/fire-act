@@ -74,6 +74,27 @@ defmodule FireActTest.ChangesetParamsTest do
     end
   end
 
+  defmodule PrefillChangesetData do
+    use FireAct.Handler
+
+    use FireAct.ChangesetParams,
+      schema: %{
+        name: :string,
+        age: :integer
+      }
+
+    def handle(action, _) do
+      action
+    end
+
+    defp data(action), do: action.assigns.resource
+
+    defp validate_params(action, chset) do
+      chset
+      |> Ecto.Changeset.validate_required([:name, :age])
+    end
+  end
+
   use ExUnit.Case
   doctest FireAct.ChangesetParams
 
@@ -132,5 +153,26 @@ defmodule FireActTest.ChangesetParamsTest do
       FireAct.run(PlugBeforeChangeset, %{
         age: "20"
       })
+  end
+
+  test "allow for prefilling data with existing object" do
+    %{name: "Foo", age: nil} =
+      PrefillChangesetData.new(%{name: "Foo"}, %{age: nil}).changes
+
+    # Test string params (like from form in Phoenix Controller)
+    %{name: "Foo", age: 20} =
+      PrefillChangesetData.new(%{name: "Foo"}, %{"age" => 20}).changes
+
+    %{name: nil, age: 20} =
+      PrefillChangesetData.new(%{"age" => 20}).changes
+
+    {:ok, action} =
+      FireAct.run(
+        PrefillChangesetData,
+        %{
+          age: "20"
+        },
+        %{resource: %{name: "Foo"}}
+      )
   end
 end

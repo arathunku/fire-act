@@ -40,18 +40,24 @@ defmodule FireAct.ChangesetParams do
 
       import Ecto.Changeset
 
-      def new(), do: cast(%{})
+      def new(params), do: cast(params)
+      def new(data, params), do: cast(data, params)
       def validate_params(_action, changeset), do: changeset
+      def data(_action), do: %{}
 
-      defoverridable new: 0, validate_params: 2, schema: 0
+      defoverridable new: 1, new: 2, validate_params: 2, schema: 0, data: 1
 
       def process_params(%FireAct.Action{} = action, params) do
-        validate_params(action, cast(params))
+        validate_params(action, cast(data(action), params))
         |> apply_action(@changeset_action)
       end
 
       def cast(params) do
-        FireAct.ChangesetParams.cast(schema(), params)
+        FireAct.ChangesetParams.cast(schema(), %{}, params)
+      end
+
+      def cast(data, params) do
+        FireAct.ChangesetParams.cast(schema(), data, params)
       end
 
       def validate_passed_params(%FireAct.Action{} = action, _) do
@@ -88,18 +94,19 @@ defmodule FireAct.ChangesetParams do
     end
   end
 
-  def cast(schema, params) do
-    data = %{}
+  def cast(schema, data, params) do
     types = Enum.into(schema, %{})
-
-    empty_map =
-      Map.keys(types)
-      |> Enum.reduce(%{}, fn key, acc -> Map.put(acc, key, nil) end)
 
     changeset =
       {data, types}
       |> Ecto.Changeset.cast(params, Map.keys(types))
 
-    put_in(changeset.changes, Map.merge(empty_map, changeset.changes))
+    initial_map =
+      Map.keys(types)
+      |> Enum.reduce(%{}, fn key, acc ->
+        Map.put(acc, key, Ecto.Changeset.get_field(changeset, key))
+      end)
+
+    put_in(changeset.changes, Map.merge(initial_map, changeset.changes))
   end
 end
