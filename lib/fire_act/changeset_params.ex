@@ -1,4 +1,7 @@
 defmodule FireAct.ChangesetParams do
+  @callback cast(any, Map.t()) :: Ecto.Changeset.t()
+  @callback validate_params(FireAct.Action.t(), Map.t()) :: Ecto.Changeset.t()
+
   @moduledoc """
   Params validation based on Ecto.Changeset.
 
@@ -15,21 +18,31 @@ defmodule FireAct.ChangesetParams do
     [age: {"is invalid", [type: :integer, validation: :cast]}]
 
   """
-  defmacro __using__(opts) do
+  defmacro __using__(opts) when is_list(opts) do
+    define_changeset_helpers(opts)
+  end
+
+  defmacro __using__([]) do
+    define_changeset_helpers([])
+  end
+
+  defmacro __using__(schema) do
+    define_changeset_helpers(schema: schema)
+  end
+
+  def define_changeset_helpers(opts) do
     quote do
+      @behaviour FireAct.ChangesetParams
       opts = unquote(opts)
 
-      opts =
-        if is_map(opts) do
-          [schema: opts]
-        else
-          opts
-        end
+      if opts[:schema] do
+        @schema opts[:schema]
 
-      @schema Keyword.fetch!(opts, :schema)
-      @changeset_action Keyword.get(opts, :changeset_action, :insert)
-      @error_key Keyword.get(opts, :error_key, :error)
-      def schema(), do: @schema
+        def schema(), do: @schema
+      end
+
+      @changeset_action opts[:changeset_action] || :insert
+      @error_key opts[:error_key] || :error
       def error_key(), do: @error_key
 
       plug(:validate_passed_params)
@@ -40,24 +53,33 @@ defmodule FireAct.ChangesetParams do
 
       import Ecto.Changeset
 
-      def new(params), do: cast(params)
-      def new(data, params), do: cast(data, params)
-      def validate_params(_action, changeset), do: changeset
-      def data(_action), do: %{}
+      if opts[:schema] do
+        def new(params), do: cast(params)
+        def new(data, params), do: cast(data, params)
 
-      defoverridable new: 1, new: 2, validate_params: 2, schema: 0, data: 1
+        def validate_params(_action, changeset), do: changeset
 
-      def process_params(%FireAct.Action{} = action, params) do
-        validate_params(action, cast(data(action), params))
-        |> apply_action(@changeset_action)
-      end
+        def data(_action), do: %{}
 
-      def cast(params) do
-        FireAct.ChangesetParams.cast(schema(), %{}, params)
-      end
+        def process_params(%FireAct.Action{} = action, params) do
+          validate_params(action, cast(data(action), params))
+          |> apply_action(@changeset_action)
+        end
 
-      def cast(data, params) do
-        FireAct.ChangesetParams.cast(schema(), data, params)
+        def cast(params) do
+          FireAct.ChangesetParams.cast(schema(), %{}, params)
+        end
+
+        def cast(data, params) do
+          FireAct.ChangesetParams.cast(schema(), data, params)
+        end
+
+        defoverridable new: 1, new: 2, validate_params: 2, data: 1
+      else
+        def process_params(%FireAct.Action{} = action, params) do
+          validate_params(action, params)
+          |> apply_action(@changeset_action)
+        end
       end
 
       def validate_passed_params(%FireAct.Action{} = action, _) do
@@ -100,6 +122,7 @@ defmodule FireAct.ChangesetParams do
     changeset =
       {data, types}
       |> Ecto.Changeset.cast(params, Map.keys(types))
+      |> Map.put(:action, :insert)
 
     initial_map =
       Map.keys(types)

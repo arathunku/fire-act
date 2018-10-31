@@ -6,7 +6,7 @@ defmodule FireAct.Logger do
   end
 
   def call(action, _opts) do
-    Logger.info("Test logger action=#{inspect(action)}")
+    Logger.debug(fn -> "Test logger action=#{inspect(action)}" end)
 
     action
   end

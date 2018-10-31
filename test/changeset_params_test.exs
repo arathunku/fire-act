@@ -62,7 +62,7 @@ defmodule FireActTest.ChangesetParamsTest do
       action
     end
 
-    defp validate_params(action, chset) do
+    def validate_params(action, chset) do
       action.assigns.resource
 
       chset
@@ -87,9 +87,9 @@ defmodule FireActTest.ChangesetParamsTest do
       action
     end
 
-    defp data(action), do: action.assigns.resource
+    def data(action), do: action.assigns.resource
 
-    defp validate_params(action, chset) do
+    def validate_params(_action, chset) do
       chset
       |> Ecto.Changeset.validate_required([:name, :age])
     end
@@ -149,24 +149,21 @@ defmodule FireActTest.ChangesetParamsTest do
   end
 
   test "plugs before changeset" do
-    {:ok, action} =
+    {:ok, _action} =
       FireAct.run(PlugBeforeChangeset, %{
         age: "20"
       })
   end
 
   test "allow for prefilling data with existing object" do
-    %{name: "Foo", age: nil} =
-      PrefillChangesetData.new(%{name: "Foo"}, %{age: nil}).changes
+    assert %{name: "Foo", age: nil} == PrefillChangesetData.new(%{name: "Foo"}, %{age: nil}).changes
 
     # Test string params (like from form in Phoenix Controller)
-    %{name: "Foo", age: 20} =
-      PrefillChangesetData.new(%{name: "Foo"}, %{"age" => 20}).changes
+    %{name: "Foo", age: 20} = PrefillChangesetData.new(%{name: "Foo"}, %{"age" => 20}).changes
 
-    %{name: nil, age: 20} =
-      PrefillChangesetData.new(%{"age" => 20}).changes
+    %{name: nil, age: 20} = PrefillChangesetData.new(%{"age" => 20}).changes
 
-    {:ok, action} =
+    {:ok, _action} =
       FireAct.run(
         PrefillChangesetData,
         %{
@@ -174,5 +171,86 @@ defmodule FireActTest.ChangesetParamsTest do
         },
         %{resource: %{name: "Foo"}}
       )
+  end
+
+  test "action is always insert" do
+    :insert = PrefillChangesetData.new(%{age: "20"}, %{resource: %{}}).action
+
+    FireAct.run(PrefillChangesetData, %{age: ""}, %{resource: %{}})
+    |> case do
+      {:error, %{assigns: %{error: error}}} ->
+        assert :insert = error.action
+    end
+  end
+
+  describe "supports embedded schemas" do
+    defmodule SetPostComments do
+      use FireAct.Handler
+      use Ecto.Schema
+
+      @primary_key false
+      embedded_schema do
+        field(:post_id, :id)
+
+        embeds_many :comments, Comment do
+          field(:content, :string)
+        end
+      end
+
+      use FireAct.ChangesetParams
+
+      def new(params \\ %{}), do: cast(%__MODULE__{}, params)
+      def handle(action, _) do
+        action
+      end
+
+      def cast(data, params), do:
+        data
+        |> Ecto.Changeset.cast(params, ~w(post_id)a)
+        |> Ecto.Changeset.validate_required(~w(post_id)a)
+        |> Ecto.Changeset.cast_embed(:comments, required: true, with: &comment_changeset/2)
+
+      def validate_params(_action, params) do
+        cast(%__MODULE__{}, params)
+      end
+
+      def comment_changeset(chset, params) do
+        chset
+        |> Ecto.Changeset.cast(params, ~w(content)a)
+        |> Ecto.Changeset.validate_required(~w(content)a)
+      end
+    end
+
+    test "supports embedded schema" do
+      %{} = SetPostComments.new(%{}).changes
+
+      {:ok, _} = SetPostComments
+      |> FireAct.run(%{post_id: 1, comments: [%{content: "xx"}]}, %{})
+    end
+
+    test "validates for errors" do
+      SetPostComments
+      |> FireAct.run(%{post_id: 1}, %{})
+      |> case do
+        {:error, %{assigns: %{error: _error}}} ->
+          :ok
+      end
+    end
+
+    test "validates for errors inside nested structure" do
+      SetPostComments
+      |> FireAct.run(%{post_id: 1, comments: [%{content: nil}]}, %{})
+      |> case do
+        {:error, %{assigns: %{error: _error}}} ->
+          :ok
+      end
+
+      SetPostComments
+      |> FireAct.run(%{post_id: 1, comments: [%{content: "hi"}]}, %{})
+      |> case do
+        {:ok, %{assigns: _}} ->
+          :ok
+      end
+    end
   end
 end
