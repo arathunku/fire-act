@@ -17,23 +17,33 @@ defmodule FireAct do
     }
 
     def handle(action, permitted_params) do
-      %{email: _email, age: _age} = permitted_params
-
-      User.changeset(permitted_params)
-      |> Repo.update!()
+      MyApp.User.create_changeset(permitted_params)
+      |> MyApp.Repo.insert()
+      |> case do
+        {:ok, user} ->
+          action |> assign(:user, user)
+        {:error, error} ->
+          action |> assign(:error, error) |> fail()
+      end
     end
 
     def validate_params(_action, changeset) do
+      changeset
+      |> validate_email()
+      |> validate_required([:age, :email])
+    end
+
+    defp validate_email(changeset) do
       if "valid@example.com" == get_field(changeset, :email) do
         changeset
       else
         changeset
-        |> add_error(:email, "only invalid@example.com")
+        |> add_error(:email, "only valid@example.com is OK")
       end
     end
   end
 
-  {:ok, action} = FireAct.run(RegisterUser, %{
+  {:ok, %{assigns: %{user: user}}} = FireAct.run(RegisterUser, %{
     age: 1,
     email: "valid@example.com"
   })
@@ -41,44 +51,49 @@ defmodule FireAct do
   """
   alias FireAct.Action
 
-  def run(%Action{} = action), do: run(action, [])
+  @plug_init_mode Application.get_env(:fire_act, :plug_init_mode, :runtime)
 
-  def run(%Action{} = action, opts) do
-    handler = action.private |> Map.fetch!(:fire_act_handler)
+  def run(handlers), do: Action.new(%{}, %{}) |> do_run(List.wrap(handlers), [])
 
-    handler.call(action, opts)
-    |> handle_action_result()
+  def run(%Action{} = action, handlers) do
+    do_run(action, List.wrap(handlers), [])
   end
 
-  def run(handler, params) do
-    action(handler, params)
-    |> run()
-  end
+  def run(handlers, params), do: Action.new(params, %{}) |> do_run(List.wrap(handlers), [])
 
-  def run(handler, params, assigns) do
-    action(handler, params, assigns)
-    |> run()
-  end
-
-  defp handle_action_result(%Action{failed: true} = action) do
-    {:error, action}
-  end
-
-  defp handle_action_result(%Action{failed: false} = action) do
-    {:ok, action}
-  end
-
-  def action(%Plug.Conn{} = conn, handler) do
-    action(handler, conn.params, conn.assigns)
-  end
-
-  def action(handler, params \\ %{}, assigns \\ %{}) do
-    %Action{params: params, assigns: assigns}
-    |> Action.put_private(:fire_act_handler, handler)
-  end
+  def run(handlers, params, assigns),
+    do: Action.new(params, assigns) |> do_run(List.wrap(handlers), [])
 
   def plug_init_mode do
-    # Application.get_env(:fire_act, :plug_init_mode, :compile)
-    :runtime
+    @plug_init_mode
+  end
+
+  defp do_run(%Action{} = action, [], _), do: {:ok, action}
+
+  defp do_run(%Action{} = action, [handler | handlers], executed_handlers) do
+    handler.call(action, [])
+    |> case do
+      {code, %Action{} = action} when code in ~w(ok error)a -> action
+      action -> action
+    end
+    |> case do
+      %Action{failed: true} = action ->
+        rollback_handlers(action, executed_handlers)
+
+      %Action{failed: false} = action ->
+        do_run(action, handlers, [handler | executed_handlers])
+    end
+  end
+
+  defp rollback_handlers(action, []), do: {:error, action}
+
+  defp rollback_handlers(action, [handler | executed_handlers]) do
+    case handler.rollback(action) do
+      %FireAct.Action{} = action ->
+        rollback_handlers(action, executed_handlers)
+
+      _ ->
+        rollback_handlers(action, executed_handlers)
+    end
   end
 end

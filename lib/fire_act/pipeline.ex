@@ -14,23 +14,17 @@ defmodule FireAct.Pipeline do
 
       @doc false
       def call(action, _) do
-        action =
-          if action.private[:fire_act_handler] do
-            action
-          else
-            update_in(
-              action.private,
-              &(&1
-                |> Map.put(:fire_act_handler, __MODULE__))
-            )
-          end
-
         fire_act_handler_pipeline(action, :handle)
       end
 
       @doc false
       def action(%FireAct.Action{} = action, _options) do
         apply(__MODULE__, :handle, [action, action.params])
+        |> case do
+          # unwrap the result in case there are nested calls to FireAct.run
+          {_, %FireAct.Action{} = action} -> action
+          %FireAct.Action{} = action -> action
+        end
       end
 
       defoverridable init: 1, call: 2, action: 2

@@ -21,6 +21,23 @@ defmodule FireAct.Action do
             failed: false,
             private: %{}
 
+
+  def new(%Plug.Conn{} = conn) do
+    new(conn.params, conn.assigns)
+  end
+
+  def new(params) do
+    new(params, %{})
+  end
+
+  def new(%Plug.Conn{} = conn, assigns) do
+    new(conn.params, Map.merge(conn.assigns, assigns))
+  end
+
+  def new(params, assigns) do
+    %__MODULE__{params: params, assigns: assigns}
+  end
+
   @spec assign(t, atom, term) :: t
   def assign(%Action{assigns: assigns} = action, key, value) when is_atom(key) do
     %{action | assigns: Map.put(assigns, key, value)}

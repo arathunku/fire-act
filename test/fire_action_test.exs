@@ -77,7 +77,7 @@ defmodule FireActTest do
   end
 
   test "run halted" do
-    {:ok, action} = FireAct.action(Halted, %{}) |> FireAct.run()
+    {:ok, action} = FireAct.run(Halted, %{})
 
     assert action.halted
     assert action.assigns[:first]
@@ -87,17 +87,8 @@ defmodule FireActTest do
   end
 
   test "steps order" do
-    {:ok, action} = FireAct.action(Ordered, %{}) |> FireAct.run()
+    {:ok, action} = FireAct.run(Ordered, %{})
 
     assert action.assigns[:steps] == [:one, :two, :three]
-  end
-
-  test "#action" do
-    %FireAct.Action{
-      params: %{a: 1},
-      assigns: %{
-        b: 2
-      }
-    } = FireAct.action(Halted, %{a: 1}, %{b: 2})
   end
 end

@@ -1,4 +1,4 @@
-defmodule FireActTest.OrganizerTest do
+defmodule FireActTest.NestedActionsWithRollbacksTest do
   use ExUnit.Case
 
   defmodule CreateUser do
@@ -69,20 +69,22 @@ defmodule FireActTest.OrganizerTest do
 
   defmodule UserRegistration do
     use FireAct.Handler
+    alias FireActTest.NestedActionsWithRollbacksTest, as: Test
 
-    plug(FireActTest.OrganizerTest.CreateUser)
-    plug(FireActTest.OrganizerTest.SendConfirmationEmail)
-    plug(FireActTest.OrganizerTest.LogActivity)
+    plug(Test.CreateUser)
+    plug(Test.SendConfirmationEmail)
+    plug(Test.LogActivity)
   end
 
   defmodule UserRegistrationWithRollback do
     use FireAct.Handler
+    alias FireActTest.NestedActionsWithRollbacksTest, as: Test
 
     def handle(action, _) do
-      organize(action, [
-        FireActTest.OrganizerTest.CreateUser,
-        FireActTest.OrganizerTest.SendConfirmationEmail,
-        FireActTest.OrganizerTest.LogActivity
+      FireAct.run(action, [
+        Test.CreateUser,
+        Test.SendConfirmationEmail,
+        Test.LogActivity
       ])
     end
   end
