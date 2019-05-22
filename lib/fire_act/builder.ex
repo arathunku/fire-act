@@ -15,7 +15,6 @@ defmodule FireAct.Builder do
 
       defoverridable init: 1, call: 2
 
-      import FireAct.Action
       import FireAct.Builder, only: [plug: 1, plug: 2, builder_opts: 0], warn: false
 
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)

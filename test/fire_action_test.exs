@@ -91,4 +91,5 @@ defmodule FireActTest do
 
     assert action.assigns[:steps] == [:one, :two, :three]
   end
+
 end

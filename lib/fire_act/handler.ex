@@ -2,7 +2,7 @@ defmodule FireAct.Handler do
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       import FireAct.Handler
-      import FireAct.Action
+      import FireAct.Action, except: [new: 0, new: 1, new: 2]
 
       use FireAct.Pipeline, opts
 

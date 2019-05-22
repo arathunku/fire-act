@@ -4,7 +4,7 @@ defmodule FireAct.MixProject do
   def project do
     [
       app: :fire_act,
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.5",
       start_permanent: Mix.env() == :prod,
       deps: deps(),

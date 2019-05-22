@@ -8,6 +8,9 @@ defmodule FireActTest.ChangesetParamsTest do
 
     @adult_age 18
 
+    def new(params \\ %{}), do: cast(params)
+    def new(_ctx, params), do: cast(params)
+
     def handle(action, permitted_params) do
       %{age: _age} = permitted_params
 
@@ -146,6 +149,12 @@ defmodule FireActTest.ChangesetParamsTest do
 
     assert action_failed.assigns[:msg] == "fail"
     assert action_success.assigns[:msg] == "success"
+  end
+
+  test "initial changeset can be returned via casting" do
+    %Ecto.Changeset{} = RegisterUser.new()
+    %Ecto.Changeset{} = RegisterUser.new(%{})
+    %Ecto.Changeset{} = RegisterUser.new(nil, %{})
   end
 
   test "plugs before changeset" do
